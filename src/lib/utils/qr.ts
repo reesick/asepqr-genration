@@ -1,14 +1,25 @@
-export const generateQRCodeData = (
+export const generateQRCodeData = async (
   subject: string,
   lectureType: string,
   batch: string,
-) => {
-  const now = new Date();
-  const date = now.toISOString().split("T")[0].replace(/-/g, "_");
-  const time = `${now.getHours()}-${now.getHours() + 1}`;
-  const qrNumber = Math.floor(Math.random() * 1000);
+  timeSlot: string,
+  selectedDate: Date,
+): Promise<string> => {
+  // Format date as YYYY-MM-DD
+  const date = selectedDate.toISOString().split("T")[0];
 
-  return `${subject}_${lectureType}_${batch}_${date}_${time}_${qrNumber}`;
+  // Parse time slot
+  const [timeStart, timeEnd] = timeSlot.split("-");
+
+  // Generate QR code data with the format:
+  // subject_lecturetype_batch_timestart-timeend_year_month_day_qrcodeno
+  const [year, month, day] = date.split("-");
+  const qrNumber = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
+
+  const qrData = `${subject}_${lectureType}_${batch}_${timeStart}-${timeEnd}_${year}_${month}_${day}_${qrNumber}`;
+  return qrData;
 };
 
 export const isQRCodeValid = (qrData: string, timestamp: number) => {

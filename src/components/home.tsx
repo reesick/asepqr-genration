@@ -6,44 +6,97 @@ import AttendanceList from "./AttendanceList";
 import { Button } from "./ui/button";
 import { FileDown } from "lucide-react";
 import { generateQRCodeData } from "@/lib/utils/qr";
+import { useToast } from "./ui/use-toast";
 
 const Home = () => {
+  const { toast } = useToast();
   const [subject, setSubject] = useState("SRM");
   const [lectureType, setLectureType] = useState("Theory");
   const [batch, setBatch] = useState("");
-  const [qrCodeData, setQrCodeData] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState("9:00-10:00");
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
   const [sessionStartTime] = useState(new Date());
   const [studentCount, setStudentCount] = useState(0);
   const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [sessionActive, setSessionActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Get current location
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setCoordinates({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      });
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Location error:", error);
+        },
+      );
     }
   }, []);
 
-  const handleQRRefresh = () => {
-    if (sessionActive) {
-      const newQRData = generateQRCodeData(subject, lectureType, batch);
+  const handleQRRefresh = async () => {
+    if (!sessionActive) return;
+
+    setIsLoading(true);
+    try {
+      const newQRData = await generateQRCodeData(
+        subject,
+        lectureType,
+        batch,
+        selectedTime,
+        selectedDate,
+      );
+      console.log("Generated QR Data:", newQRData);
       setQrCodeData(newQRData);
+    } catch (error) {
+      console.error("Failed to generate QR code:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCreateQR = () => {
-    setSessionActive(true);
-    handleQRRefresh();
+  const handleCreateQR = async () => {
+    setIsLoading(true);
+    try {
+      const newQRData = await generateQRCodeData(
+        subject,
+        lectureType,
+        batch,
+        selectedTime,
+        selectedDate,
+      );
+
+      setSessionActive(true);
+      setQrCodeData(newQRData);
+
+      toast({
+        title: "Session Started",
+        description: "QR codes will refresh every 5 seconds",
+      });
+    } catch (error) {
+      console.error("Failed to start session:", error);
+      toast({
+        title: "Error",
+        description: "Failed to start session. Please try again.",
+        variant: "destructive",
+      });
+      setSessionActive(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleEndSession = () => {
     setSessionActive(false);
-    setQrCodeData("");
+    setQrCodeData(null);
+    toast({
+      title: "Session Ended",
+      description: "QR code generation stopped",
+    });
   };
 
   const calculateSessionDuration = () => {
@@ -58,13 +111,14 @@ const Home = () => {
   };
 
   useEffect(() => {
+    if (!sessionActive) return;
+
     handleQRRefresh();
-  }, [subject, lectureType, batch]);
+  }, [sessionActive]);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">
             Attendance Management Dashboard
@@ -75,27 +129,26 @@ const Home = () => {
           </Button>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column */}
           <div className="lg:col-span-4 space-y-6">
-            {sessionActive && (
-              <QRCodeDisplay
-                qrCodeData={qrCodeData}
-                refreshInterval={5000}
-                onRefresh={handleQRRefresh}
-              />
-            )}
+            <QRCodeDisplay
+              qrCodeData={qrCodeData}
+              refreshInterval={5000}
+              onRefresh={handleQRRefresh}
+              isLoading={isLoading}
+            />
             <SessionControls
               onSubjectChange={setSubject}
               onLectureTypeChange={setLectureType}
               onBatchChange={setBatch}
+              onDateChange={setSelectedDate}
+              onTimeChange={setSelectedTime}
               onCreateQR={handleCreateQR}
               onEndSession={handleEndSession}
+              isLoading={isLoading}
             />
           </div>
 
-          {/* Right Column */}
           <div className="lg:col-span-8 space-y-6">
             <StatusPanel
               sessionDuration={calculateSessionDuration()}

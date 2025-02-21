@@ -11,7 +11,7 @@ import { Card } from "./ui/card";
 import { Slider } from "./ui/slider";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { CalendarIcon, QrCode, XCircle } from "lucide-react";
+import { CalendarIcon, QrCode, XCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -33,6 +33,7 @@ interface SessionControlsProps {
   onTimeChange?: (time: string) => void;
   onQRCountChange?: (count: number) => void;
   onCreateQR?: () => void;
+  isLoading?: boolean;
 }
 
 const subjects = [
@@ -62,6 +63,7 @@ const SessionControls = ({
   onTimeChange = () => {},
   onQRCountChange = () => {},
   onCreateQR = () => {},
+  isLoading = false,
 }: SessionControlsProps) => {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -80,7 +82,6 @@ const SessionControls = ({
   const handleLectureTypeChange = (value: string) => {
     setLectureType(value);
     onLectureTypeChange(value);
-    // Only show batch selection for Lab and Tutorial
     if (value === "Theory") {
       setBatch("");
       onBatchChange("");
@@ -203,15 +204,26 @@ const SessionControls = ({
           variant="default"
           className="w-full"
           onClick={() => setShowCreateDialog(true)}
+          disabled={isLoading}
         >
-          <QrCode className="w-4 h-4 mr-2" />
-          Create QR Codes
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <QrCode className="w-4 h-4 mr-2" />
+              Create QR Codes
+            </>
+          )}
         </Button>
 
         <Button
           variant="destructive"
           className="w-full"
           onClick={() => setShowEndDialog(true)}
+          disabled={isLoading}
         >
           <XCircle className="w-4 h-4 mr-2" />
           End Session
@@ -257,8 +269,16 @@ const SessionControls = ({
                   onCreateQR();
                   setShowCreateDialog(false);
                 }}
+                disabled={isLoading}
               >
-                Create
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
