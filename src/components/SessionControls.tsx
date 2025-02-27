@@ -11,7 +11,7 @@ import { Card } from "./ui/card";
 import { Slider } from "./ui/slider";
 import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { CalendarIcon, QrCode, XCircle } from "lucide-react";
+import { CalendarIcon, QrCode, XCircle, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import {
   AlertDialog,
@@ -33,6 +33,7 @@ interface SessionControlsProps {
   onTimeChange?: (time: string) => void;
   onQRCountChange?: (count: number) => void;
   onCreateQR?: () => void;
+  isLoading?: boolean;
 }
 
 const subjects = [
@@ -47,7 +48,7 @@ const subjects = [
   "RAD-1",
 ];
 const lectureTypes = ["Theory", "Lab", "Tutorial"];
-const batches = ["Batch 1", "Batch 2", "Batch 3"];
+const batches = ["Whole Class", "Batch 1", "Batch 2", "Batch 3"];
 const timeSlots = Array.from({ length: 10 }, (_, i) => {
   const hour = i + 9;
   return `${hour}:00-${hour + 1}:00`;
@@ -62,6 +63,7 @@ const SessionControls = ({
   onTimeChange = () => {},
   onQRCountChange = () => {},
   onCreateQR = () => {},
+  isLoading = false,
 }: SessionControlsProps) => {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -80,11 +82,9 @@ const SessionControls = ({
   const handleLectureTypeChange = (value: string) => {
     setLectureType(value);
     onLectureTypeChange(value);
-    // Only show batch selection for Lab and Tutorial
-    if (value === "Theory") {
-      setBatch("");
-      onBatchChange("");
-    }
+    // Set default batch to "Whole Class"
+    setBatch("Whole Class");
+    onBatchChange("Whole Class");
   };
 
   const handleBatchChange = (value: string) => {
@@ -138,20 +138,18 @@ const SessionControls = ({
           </SelectContent>
         </Select>
 
-        {(lectureType === "Lab" || lectureType === "Tutorial") && (
-          <Select value={batch} onValueChange={handleBatchChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Batch" />
-            </SelectTrigger>
-            <SelectContent>
-              {batches.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={batch} onValueChange={handleBatchChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            {batches.map((b) => (
+              <SelectItem key={b} value={b}>
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Popover>
           <PopoverTrigger asChild>
@@ -203,15 +201,26 @@ const SessionControls = ({
           variant="default"
           className="w-full"
           onClick={() => setShowCreateDialog(true)}
+          disabled={isLoading}
         >
-          <QrCode className="w-4 h-4 mr-2" />
-          Create QR Codes
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              <QrCode className="w-4 h-4 mr-2" />
+              Create QR Codes
+            </>
+          )}
         </Button>
 
         <Button
           variant="destructive"
           className="w-full"
           onClick={() => setShowEndDialog(true)}
+          disabled={isLoading}
         >
           <XCircle className="w-4 h-4 mr-2" />
           End Session
@@ -257,8 +266,16 @@ const SessionControls = ({
                   onCreateQR();
                   setShowCreateDialog(false);
                 }}
+                disabled={isLoading}
               >
-                Create
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -28,4 +28,7 @@ dist-ssr
 **/tempobook/dynamic/
 **/tempobook/storyboards/
 
+# Google credentials
+credentials.json
+
 core
