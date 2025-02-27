@@ -23,23 +23,29 @@ const QRCodeDisplay = ({
   useEffect(() => {
     if (!qrCodeData || isLoading) return;
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          onRefresh();
-          return refreshInterval / 1000;
-        }
-        return prev - 1;
-      });
+    // Reset progress when QR code changes
+    setTimeLeft(refreshInterval / 1000);
+    setProgress(100);
 
+    const timer = setInterval(() => {
+      onRefresh();
+      setTimeLeft(refreshInterval / 1000);
+      setProgress(100);
+    }, refreshInterval);
+
+    const progressTimer = setInterval(() => {
+      setTimeLeft((prev) => Math.max(0, prev - 1));
       setProgress((prev) => {
-        const newProgress = ((timeLeft - 1) / (refreshInterval / 1000)) * 100;
-        return Math.max(0, Math.min(100, newProgress));
+        const newProgress = (timeLeft / (refreshInterval / 1000)) * 100;
+        return Math.max(0, newProgress);
       });
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [refreshInterval, onRefresh, timeLeft, isLoading, qrCodeData]);
+    return () => {
+      clearInterval(timer);
+      clearInterval(progressTimer);
+    };
+  }, [refreshInterval, onRefresh, qrCodeData]);
 
   // Reset timer when loading completes or QR code changes
   useEffect(() => {

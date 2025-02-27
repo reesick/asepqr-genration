@@ -48,7 +48,7 @@ const subjects = [
   "RAD-1",
 ];
 const lectureTypes = ["Theory", "Lab", "Tutorial"];
-const batches = ["Batch 1", "Batch 2", "Batch 3"];
+const batches = ["Whole Class", "Batch 1", "Batch 2", "Batch 3"];
 const timeSlots = Array.from({ length: 10 }, (_, i) => {
   const hour = i + 9;
   return `${hour}:00-${hour + 1}:00`;
@@ -82,10 +82,9 @@ const SessionControls = ({
   const handleLectureTypeChange = (value: string) => {
     setLectureType(value);
     onLectureTypeChange(value);
-    if (value === "Theory") {
-      setBatch("");
-      onBatchChange("");
-    }
+    // Set default batch to "Whole Class"
+    setBatch("Whole Class");
+    onBatchChange("Whole Class");
   };
 
   const handleBatchChange = (value: string) => {
@@ -139,20 +138,18 @@ const SessionControls = ({
           </SelectContent>
         </Select>
 
-        {(lectureType === "Lab" || lectureType === "Tutorial") && (
-          <Select value={batch} onValueChange={handleBatchChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Batch" />
-            </SelectTrigger>
-            <SelectContent>
-              {batches.map((b) => (
-                <SelectItem key={b} value={b}>
-                  {b}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={batch} onValueChange={handleBatchChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            {batches.map((b) => (
+              <SelectItem key={b} value={b}>
+                {b}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Popover>
           <PopoverTrigger asChild>

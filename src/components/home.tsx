@@ -12,7 +12,7 @@ const Home = () => {
   const { toast } = useToast();
   const [subject, setSubject] = useState("SRM");
   const [lectureType, setLectureType] = useState("Theory");
-  const [batch, setBatch] = useState("");
+  const [batch, setBatch] = useState("Whole Class");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState("9:00-10:00");
   const [qrCodeData, setQrCodeData] = useState<string | null>(null);
@@ -21,6 +21,7 @@ const Home = () => {
   const [coordinates, setCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [sessionActive, setSessionActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentQRNumber, setCurrentQRNumber] = useState(1);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -43,15 +44,16 @@ const Home = () => {
 
     setIsLoading(true);
     try {
-      const newQRData = await generateQRCodeData(
+      const { qrData, nextNumber } = await generateQRCodeData(
         subject,
         lectureType,
         batch,
         selectedTime,
         selectedDate,
+        currentQRNumber,
       );
-      console.log("Generated QR Data:", newQRData);
-      setQrCodeData(newQRData);
+      setCurrentQRNumber(nextNumber);
+      setQrCodeData(qrData);
     } catch (error) {
       console.error("Failed to generate QR code:", error);
     } finally {
@@ -62,16 +64,18 @@ const Home = () => {
   const handleCreateQR = async () => {
     setIsLoading(true);
     try {
-      const newQRData = await generateQRCodeData(
+      const { qrData, nextNumber } = await generateQRCodeData(
         subject,
         lectureType,
         batch,
         selectedTime,
         selectedDate,
+        currentQRNumber,
       );
 
+      setCurrentQRNumber(nextNumber);
       setSessionActive(true);
-      setQrCodeData(newQRData);
+      setQrCodeData(qrData);
 
       toast({
         title: "Session Started",
@@ -93,6 +97,7 @@ const Home = () => {
   const handleEndSession = () => {
     setSessionActive(false);
     setQrCodeData(null);
+    setCurrentQRNumber(1); // Reset QR number when session ends
     toast({
       title: "Session Ended",
       description: "QR code generation stopped",
